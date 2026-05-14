@@ -7,8 +7,8 @@ Companion repository for **c03 — The Reader** at
 
 ## Follow my journey
 
-Working through c03 alongside the implementation pages? Build `il_getline`
-and `fg_split` step by step, then run the tester.
+Working through c03 alongside the implementation pages? Build `tci_getline`
+and `tciu_split` step by step, then run the tester.
 
 Clone this repository and copy `test.sh` into your working directory:
 
@@ -26,13 +26,13 @@ All tests must pass before the chapter is complete.
 
 ## Follow your journey
 
-Building `il_getline` and `fg_split` independently? Here is the full
+Building `tci_getline` and `tciu_split` independently? Here is the full
 project brief.
 
-**idiotlib:** add `il_getline` to the library from c02.
+**libtci:** add `tci_getline` to the library from c02.
 
 ```c
-char    *il_getline(int fd);
+char    *tci_getline(int fd);
 ```
 
 Returns the next line from `fd`, including the trailing `'\n'` if present.
@@ -42,18 +42,18 @@ each with its own saved state.
 
 Compile with: `gcc -Wall -Wextra -g -std=c99 -D BUFFER_SIZE=32`
 
-**forge:** introduce a second library — `libforge.a` / `forge.h` — and add
-`fg_split` as its first function.
+**libtciutil:** introduce a second library — `libtciutil.a` / `libtciutil.h` — and add
+`tciu_split` as its first function.
 
 ```c
-char    **fg_split(char const *s, char sep);
+char    **tciu_split(char const *s, char sep);
 ```
 
 Returns a NULL-terminated array of strings split on `sep`. NULL input returns
 NULL. Consecutive separators produce no empty strings. The caller owns the
 returned array and all strings in it.
 
-Link order: `gcc ... -L. -lforge -lidiot -I.`
+Link order: `gcc ... -L. -ltciutil -ltci -I.`
 
 Build and test your own version first. Use `solution/` to compare once you
 are done, not before.
@@ -62,7 +62,7 @@ are done, not before.
 
 ## What the tester checks
 
-**il_getline suite** (run with BUFFER_SIZE = 1, 7, 32, 4096):
+**tci_getline suite** (run with BUFFER_SIZE = 1, 7, 32, 4096):
 
 - Short file (all lines with `\n`)
 - Long file (lines longer than BUFFER_SIZE)
@@ -79,7 +79,7 @@ are done, not before.
 - No memory leaks reading a file to completion
 - No memory leaks with a no-trailing-newline file
 
-**fg_split suite:**
+**tciu_split suite:**
 
 - Basic split, single field, custom delimiter
 - Consecutive separators, leading/trailing separators, separator-only string

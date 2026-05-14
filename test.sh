@@ -1,9 +1,9 @@
 #!/bin/bash
 # c03 — The Reader / test.sh
 #
-# Tests il_getline (idiotlib) and fg_split (forge).
-# Copy this file into your working directory alongside libidiot.a,
-# libforge.a, and all il_*.c / fg_*.c source files, then run:
+# Tests tci_getline (libtci) and tciu_split (libtciutil).
+# Copy this file into your working directory alongside libtci.a,
+# libtciutil.a, and all tci_*.c / tciu_*.c source files, then run:
 #
 #   bash test.sh
 
@@ -105,20 +105,20 @@ preflight() {
         echo "error: Makefile not found — run from your working directory" >&2
         ok=0
     fi
-    if [[ ! -f libidiot.a ]]; then
-        echo "error: libidiot.a not found — run 'make re' first" >&2
+    if [[ ! -f libtci.a ]]; then
+        echo "error: libtci.a not found — run 'make re' first" >&2
         ok=0
     fi
-    if [[ ! -f libforge.a ]]; then
-        echo "error: libforge.a not found — run 'make re' first" >&2
+    if [[ ! -f libtciutil.a ]]; then
+        echo "error: libtciutil.a not found — run 'make re' first" >&2
         ok=0
     fi
-    if [[ ! -f il_getline.c ]]; then
-        echo "error: il_getline.c not found in current directory" >&2
+    if [[ ! -f tci_getline.c ]]; then
+        echo "error: tci_getline.c not found in current directory" >&2
         ok=0
     fi
-    if [[ ! -f fg_split.c ]]; then
-        echo "error: fg_split.c not found in current directory" >&2
+    if [[ ! -f tciu_split.c ]]; then
+        echo "error: tciu_split.c not found in current directory" >&2
         ok=0
     fi
     if [[ ! -d "$FIXTURES" ]]; then
@@ -130,17 +130,17 @@ preflight() {
     fi
 }
 
-# ── il_getline runner ─────────────────────────────────────────────────────────
+# ── tci_getline runner ─────────────────────────────────────────────────────────
 #
-# Compiles il_getline.c fresh with a given BUFFER_SIZE, linking against
-# libidiot.a for all dependencies. The fresh il_getline.o takes precedence
-# over the one inside libidiot.a so the BUFFER_SIZE override works cleanly.
+# Compiles tci_getline.c fresh with a given BUFFER_SIZE, linking against
+# libtci.a for all dependencies. The fresh tci_getline.o takes precedence
+# over the one inside libtci.a so the BUFFER_SIZE override works cleanly.
 
 build_gl_runner() {
     local bs="$1"
     local out="${WORK_DIR}/gl_runner_bs${bs}"
     cat > "${WORK_DIR}/gl_runner.c" << 'RUNNER_EOF'
-#include "idiotlib.h"
+#include "libtci.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -156,7 +156,7 @@ int     main(int argc, char **argv)
     fd = open(argv[1], O_RDONLY);
     if (fd < 0)
         return (1);
-    while ((line = il_getline(fd)) != NULL) {
+    while ((line = tci_getline(fd)) != NULL) {
         printf("%s", line);
         free(line);
     }
@@ -167,8 +167,8 @@ RUNNER_EOF
     gcc -Wall -Wextra -g -std=c99 -D "BUFFER_SIZE=${bs}" \
         -o "$out" \
         "${WORK_DIR}/gl_runner.c" \
-        il_getline.c \
-        -L. -lidiot -I. 2>"${WORK_DIR}/build_err.txt"
+        tci_getline.c \
+        -L. -ltci -I. 2>"${WORK_DIR}/build_err.txt"
     if [[ $? -ne 0 ]]; then
         echo "  build failed (BUFFER_SIZE=${bs}):" >&2
         cat "${WORK_DIR}/build_err.txt" >&2
@@ -183,7 +183,7 @@ build_multifd_runner() {
     local bs="$1"
     local out="${WORK_DIR}/gl_multifd_bs${bs}"
     cat > "${WORK_DIR}/gl_multifd.c" << 'RUNNER_EOF'
-#include "idiotlib.h"
+#include "libtci.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -207,12 +207,12 @@ int     main(int argc, char **argv)
     done2 = 0;
     while (!done1 || !done2) {
         if (!done1) {
-            line = il_getline(fd1);
+            line = tci_getline(fd1);
             if (line) { printf("A:%s", line); free(line); }
             else done1 = 1;
         }
         if (!done2) {
-            line = il_getline(fd2);
+            line = tci_getline(fd2);
             if (line) { printf("B:%s", line); free(line); }
             else done2 = 1;
         }
@@ -225,17 +225,17 @@ RUNNER_EOF
     gcc -Wall -Wextra -g -std=c99 -D "BUFFER_SIZE=${bs}" \
         -o "$out" \
         "${WORK_DIR}/gl_multifd.c" \
-        il_getline.c \
-        -L. -lidiot -I. 2>/dev/null
+        tci_getline.c \
+        -L. -ltci -I. 2>/dev/null
     echo "$out"
 }
 
-# ── fg_split runner ───────────────────────────────────────────────────────────
+# ── tciu_split runner ───────────────────────────────────────────────────────────
 
 build_split_runner() {
     local out="${WORK_DIR}/split_runner"
     cat > "${WORK_DIR}/split_runner.c" << 'RUNNER_EOF'
-#include "forge.h"
+#include "libtciutil.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -247,13 +247,13 @@ int     main(int argc, char **argv)
 
     if (argc < 2) {
         /* NULL input test */
-        words = fg_split(NULL, '|');
+        words = tciu_split(NULL, '|');
         if (!words)
             printf("(null)\n");
         return (0);
     }
     sep = (argc >= 3) ? argv[2][0] : '|';
-    words = fg_split(argv[1], sep);
+    words = tciu_split(argv[1], sep);
     if (!words) {
         printf("(null)\n");
         return (0);
@@ -270,21 +270,21 @@ RUNNER_EOF
     gcc -Wall -Wextra -g -std=c99 \
         -o "$out" \
         "${WORK_DIR}/split_runner.c" \
-        fg_split.c \
-        -L. -lforge -lidiot -I. 2>"${WORK_DIR}/build_err.txt"
+        tciu_split.c \
+        -L. -ltciutil -ltci -I. 2>"${WORK_DIR}/build_err.txt"
     if [[ $? -ne 0 ]]; then
-        echo "  build failed (fg_split runner):" >&2
+        echo "  build failed (tciu_split runner):" >&2
         cat "${WORK_DIR}/build_err.txt" >&2
         return 1
     fi
     echo "$out"
 }
 
-# ── il_getline tests ──────────────────────────────────────────────────────────
+# ── tci_getline tests ──────────────────────────────────────────────────────────
 
 run_getline_suite() {
     echo ""
-    echo "${C_BOLD}  il_getline${C_RESET}"
+    echo "${C_BOLD}  tci_getline${C_RESET}"
     echo ""
 
     # build expected files once (they don't change across BUFFER_SIZE runs)
@@ -315,11 +315,11 @@ run_getline_suite() {
     local runner
     runner=$(build_gl_runner 32) || return
     cat > "${WORK_DIR}/invalid_fd.c" << 'EOF'
-#include "idiotlib.h"
+#include "libtci.h"
 #include <stdio.h>
 int main(void)
 {
-    char *line = il_getline(-1);
+    char *line = tci_getline(-1);
     printf("%s", line ? line : "(null)");
     return 0;
 }
@@ -327,7 +327,7 @@ EOF
     gcc -Wall -Wextra -g -std=c99 -D BUFFER_SIZE=32 \
         -o "${WORK_DIR}/invalid_fd" \
         "${WORK_DIR}/invalid_fd.c" \
-        il_getline.c -L. -lidiot -I. 2>/dev/null
+        tci_getline.c -L. -ltci -I. 2>/dev/null
     local got
     got=$("${WORK_DIR}/invalid_fd")
     check_output "invalid fd (-1)" "$got" "(null)"
@@ -337,7 +337,7 @@ EOF
 
 run_multifd_suite() {
     echo ""
-    echo "${C_BOLD}  il_getline — multiple file descriptors${C_RESET}"
+    echo "${C_BOLD}  tci_getline — multiple file descriptors${C_RESET}"
     echo ""
 
     # build expected interleaved output file
@@ -386,11 +386,11 @@ run_valgrind_suite() {
     fi
 }
 
-# ── fg_split tests ────────────────────────────────────────────────────────────
+# ── tciu_split tests ────────────────────────────────────────────────────────────
 
 run_split_suite() {
     echo ""
-    echo "${C_BOLD}  fg_split${C_RESET}"
+    echo "${C_BOLD}  tciu_split${C_RESET}"
     echo ""
 
     local runner
