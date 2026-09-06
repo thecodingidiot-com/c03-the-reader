@@ -1,7 +1,9 @@
 NAME        = libtci.a
 UTIL        = libtciutil.a
 CC          = gcc
-CFLAGS      = -Wall -Wextra -g -std=c99 -D BUFFER_SIZE=32
+CFLAGS      = -Wall -Wextra -Werror -std=c99 -D BUFFER_SIZE=32
+BUILD       = -g -O0
+RELEASE     = -O2
 AR          = ar rcs
 
 SRCS        = tci_memset.c tci_memcpy.c tci_memmove.c tci_memchr.c tci_bzero.c \
@@ -22,7 +24,7 @@ UTIL_SRCS   = tciu_split.c
 OBJS        = $(SRCS:.c=.o)
 UTIL_OBJS   = $(UTIL_SRCS:.c=.o)
 
-.PHONY: all clean fclean re
+.PHONY: all release clean fclean re
 
 all: $(NAME) $(UTIL)
 
@@ -33,10 +35,15 @@ $(UTIL): $(UTIL_OBJS)
 	$(AR) $(UTIL) $(UTIL_OBJS)
 
 %.o: %.c libtci.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(BUILD) -c $< -o $@
 
 tciu_split.o: tciu_split.c libtciutil.h libtci.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(BUILD) -c $< -o $@
+
+release:
+	@$(MAKE) --no-print-directory fclean
+	@$(MAKE) --no-print-directory BUILD="$(RELEASE)"
+	strip --strip-debug $(NAME) $(UTIL)
 
 clean:
 	rm -f $(OBJS) $(UTIL_OBJS)
